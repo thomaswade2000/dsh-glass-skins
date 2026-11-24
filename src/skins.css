@@ -12,6 +12,9 @@
   --dsh-glass-left-strength: .94;
   --dsh-glass-chat-strength: .79;
   --dsh-glass-right-strength: 1;
+  --dsh-glass-accent: #2e5fc8;
+  --dsh-glass-accent-hover: #254da5;
+  --dsh-glass-accent-surface: #eaf3ff;
 }
 
 :where(html[data-dsh-glass-skin="pearl"], .dsh-glass-option[data-swatch="pearl"]) {
@@ -21,6 +24,9 @@
   --dsh-glass-left-strength: .78;
   --dsh-glass-chat-strength: .62;
   --dsh-glass-right-strength: .74;
+  --dsh-glass-accent: #694ba8;
+  --dsh-glass-accent-hover: #573b90;
+  --dsh-glass-accent-surface: #f3edfb;
 }
 
 :where(html[data-dsh-glass-skin="mint"], .dsh-glass-option[data-swatch="mint"]) {
@@ -30,6 +36,24 @@
   --dsh-glass-left-strength: .86;
   --dsh-glass-chat-strength: .42;
   --dsh-glass-right-strength: .89;
+  --dsh-glass-accent: #147358;
+  --dsh-glass-accent-hover: #0e5942;
+  --dsh-glass-accent-surface: #e5f5ee;
+}
+
+/* DSH declares its theme aliases on body, including for portaled controls. */
+@media (forced-colors: none) {
+  html[data-dsh-glass-skin][data-dsh-glass-match-accent] body:not([data-ds-dark-theme]) {
+    --dsw-alias-button-info-fill: var(--dsh-glass-accent);
+    --dsw-alias-button-info-hover: var(--dsh-glass-accent-hover);
+    --dsw-alias-state-business-primary: var(--dsh-glass-accent);
+    --dsw-alias-state-business-tertiary: var(--dsh-glass-accent-surface);
+    --dsw-alias-link: var(--dsh-glass-accent);
+    --dsw-specific-bubble: var(--dsh-glass-accent-surface);
+    --dsw-specific-bubble-highlight: color-mix(in oklab, var(--dsh-glass-accent) 24%, var(--dsh-glass-accent-surface));
+    --dsw-alias-bg-document-selection: color-mix(in srgb, var(--dsh-glass-accent) 40%, transparent);
+    accent-color: var(--dsh-glass-accent);
+  }
 }
 
 /* Each skin retains its balance between reading and tool surfaces. */
@@ -172,6 +196,70 @@ body[data-ds-dark-theme] .dsh-glass-slider input {
 
 .dsh-glass-slider .dsh-glass-description {
   margin: 2px 0 0;
+}
+
+.dsh-glass-switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--dsw-alias-border-l3, #d4d9df);
+}
+
+.dsh-glass-switch-row > div {
+  display: grid;
+  gap: 4px;
+}
+
+.dsh-glass-switch-row label {
+  cursor: pointer;
+}
+
+.dsh-glass-switch-row .dsh-glass-description {
+  margin: 0;
+}
+
+.dsh-glass-switch-row input {
+  appearance: none;
+  flex: none;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  width: 36px;
+  height: 22px;
+  margin: 0;
+  padding: 2px;
+  border: 1px solid var(--dsw-alias-border-l3, #d4d9df);
+  border-radius: 20px;
+  background: var(--dsw-alias-interactive-bg-hover, #e8ebef);
+  cursor: pointer;
+}
+
+.dsh-glass-switch-row input::before {
+  content: "";
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px #0003;
+}
+
+.dsh-glass-switch-row input:checked {
+  justify-content: end;
+  border-color: transparent;
+  background: var(--dsw-alias-state-business-primary, #416cba);
+}
+
+@media (forced-colors: active) {
+  .dsh-glass-switch-row input {
+    appearance: auto;
+  }
+
+  .dsh-glass-switch-row input::before {
+    content: none;
+  }
 }
 
 .dsh-glass-dark-note,

@@ -5,13 +5,15 @@ const namespace = 'settings.dsh-glass-skins';
 const storageKeys = {
   skin: 'dsh-glass-skins.preference',
   transparency: 'dsh-glass-skins.transparency',
+  matchAccent: 'dsh-glass-skins.match-accent',
   optimize: 'dsh-glass-skins.optimize-main-ui',
 };
 const skinAttribute = 'data-dsh-glass-skin';
+const accentAttribute = 'data-dsh-glass-match-accent';
 const transparencyProperty = '--dsh-glass-transparency';
 const transparencyId = 'dsh-glass-transparency';
 const maximumTransparency = 85;
-const defaults = { skin: 'sky', transparency: 60, optimize: true };
+const defaults = { skin: 'sky', transparency: 60, matchAccent: true, optimize: true };
 const choices = ['native', 'sky', 'pearl', 'mint'];
 
 const en = {
@@ -23,6 +25,8 @@ const en = {
   nativeHint: 'Choose a glass skin to adjust transparency.',
   reducedNote: 'macOS Reduce Transparency is on. The selected value is saved.',
   saveError: 'Could not save your skin preference.',
+  matchAccent: 'Match accent colors to the skin',
+  matchAccentHint: 'Applies to glass skins in light appearance.',
   optimize: 'Optimize the main interface',
   optimizeHint: 'Group sidebar actions in Quick Actions and move account and feedback into Settings.',
   quickActions: 'Quick Actions',
@@ -45,6 +49,8 @@ const zh = {
   nativeHint: '选择一款磨砂皮肤后可调节。',
   reducedNote: 'macOS 已开启「降低透明度」，滑块数值仍会保存。',
   saveError: '无法保存皮肤偏好。',
+  matchAccent: '强调色跟随皮肤',
+  matchAccentHint: '在浅色外观下使用磨砂皮肤时生效。',
   optimize: '优化主界面',
   optimizeHint: '把侧栏入口收进「快速操作」，在设置中管理账户和反馈。',
   quickActions: '快速操作',
@@ -68,11 +74,30 @@ function readPreferences() {
       transparency: Number.isInteger(transparency) && transparency >= 0 && transparency <= maximumTransparency
         ? transparency
         : defaults.transparency,
+      matchAccent: localStorage.getItem(storageKeys.matchAccent) !== 'false',
       optimize: localStorage.getItem(storageKeys.optimize) !== 'false',
     };
   } catch {
     return defaults;
   }
+}
+
+function SkinSwitch({ id, label, hint, checked, onChange }) {
+  const hintId = `${id}-hint`;
+  return h('div', { className: 'dsh-glass-switch-row' },
+    h('div', null,
+      h('label', { htmlFor: id }, label),
+      h('span', { id: hintId, className: 'dsh-glass-description' }, hint),
+    ),
+    h('input', {
+      id,
+      type: 'checkbox',
+      role: 'switch',
+      checked,
+      'aria-describedby': hintId,
+      onChange: (event) => onChange(event.currentTarget.checked),
+    }),
+  );
 }
 
 function apply(ctx) {
@@ -102,6 +127,7 @@ function apply(ctx) {
   }
 
   function reflect() {
+    root.toggleAttribute(accentAttribute, preferences.skin !== 'native' && preferences.matchAccent);
     if (preferences.skin === 'native') {
       root.removeAttribute(skinAttribute);
       root.style.removeProperty(transparencyProperty);
@@ -114,7 +140,7 @@ function apply(ctx) {
 
   function update(next) {
     if (preferences.skin === next.skin && preferences.transparency === next.transparency
-      && preferences.optimize === next.optimize) return;
+      && preferences.matchAccent === next.matchAccent && preferences.optimize === next.optimize) return;
     preferences = next;
     reflect();
     for (const listener of listeners) listener();
@@ -161,6 +187,7 @@ function apply(ctx) {
         if (requestedHud !== false) void setHudEnabled(false).catch(() => {});
       }
       root.removeAttribute(skinAttribute);
+      root.removeAttribute(accentAttribute);
       root.style.removeProperty(transparencyProperty);
       style.remove();
       listeners.clear();
@@ -221,20 +248,20 @@ function apply(ctx) {
       !native && h('p', {
         className: 'dsh-glass-reduced-note dsh-glass-description',
       }, t('reducedNote')),
-      layoutAvailable && h('div', { className: 'dsh-glass-optimize-row' },
-        h('label', { htmlFor: 'dsh-glass-optimize' },
-          h('span', null, t('optimize')),
-          h('span', { id: 'dsh-glass-optimize-hint', className: 'dsh-glass-description' }, t('optimizeHint')),
-        ),
-        h('input', {
-          id: 'dsh-glass-optimize',
-          type: 'checkbox',
-          role: 'switch',
-          checked: current.optimize,
-          'aria-describedby': 'dsh-glass-optimize-hint',
-          onChange: (event) => setSaveError(!save('optimize', event.currentTarget.checked)),
-        }),
-      ),
+      h(SkinSwitch, {
+        id: 'dsh-glass-match-accent',
+        label: t('matchAccent'),
+        hint: t('matchAccentHint'),
+        checked: current.matchAccent,
+        onChange: (checked) => setSaveError(!save('matchAccent', checked)),
+      }),
+      layoutAvailable && h(SkinSwitch, {
+        id: 'dsh-glass-optimize',
+        label: t('optimize'),
+        hint: t('optimizeHint'),
+        checked: current.optimize,
+        onChange: (checked) => setSaveError(!save('optimize', checked)),
+      }),
       saveError && h('p', { role: 'alert' }, t('saveError')),
     );
   }

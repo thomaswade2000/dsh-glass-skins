@@ -4,6 +4,8 @@ macOS 版 DeepSeek Harness 的三款磨砂皮肤，**晴蓝、雾白、薄荷**�
 
 入口在左下角 **设置 → 皮肤**。左栏的「皮肤」在「Agent 预设」下方。选中皮肤后可以拖动 **玻璃透明度**，范围 0%–85%，默认 60%。皮肤和透明度都保存在当前桌面配置中。
 
+**强调色跟随皮肤** 默认开启。在浅色外观下，发送按钮、用户消息气泡、选中标签和链接等控件会随磨砂皮肤切换色系。关闭开关、选择「原生」或切到深色外观时，界面使用 DSH 原生配色。
+
 「皮肤」中的 **优化主界面** 默认开启。展开左栏后，「快速操作」汇集插件、自动化任务及同一侧栏区域的其他插件入口。登录和意见反馈可在 **设置 → 账户和反馈** 中打开。关闭开关后，侧栏即时恢复 DSH 原有入口，设置可从左下角的原生菜单打开。
 
 ## 适用范围
@@ -18,9 +20,9 @@ macOS 版 DeepSeek Harness 的三款磨砂皮肤，**晴蓝、雾白、薄荷**�
 
 ```sh
 install_dir=$(mktemp -d)
-archive="$install_dir/dsh-glass-skins-0.4.1.tgz"
+archive="$install_dir/dsh-glass-skins-0.5.0.tgz"
 curl -fL -o "$archive" \
-  "https://github.com/thomaswade2000/dsh-glass-skins/releases/download/v0.4.1/dsh-glass-skins-0.4.1.tgz" &&
+  "https://github.com/thomaswade2000/dsh-glass-skins/releases/download/v0.5.0/dsh-glass-skins-0.5.0.tgz" &&
 tar -xzf "$archive" -C "$install_dir" package/package.json package/scripts &&
 node "$install_dir/package/scripts/install-desktop.mjs" "$archive"
 ```

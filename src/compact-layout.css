@@ -55,57 +55,6 @@
   background: var(--dsw-alias-interactive-bg-hover);
 }
 
-.dsh-glass-optimize-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-top: 24px;
-  padding-top: 16px;
-  border-top: 1px solid var(--dsw-alias-border-l3, #d4d9df);
-}
-
-.dsh-glass-optimize-row label {
-  display: grid;
-  gap: 4px;
-  cursor: pointer;
-}
-
-.dsh-glass-optimize-row .dsh-glass-description {
-  margin: 0;
-}
-
-.dsh-glass-optimize-row [role="switch"] {
-  appearance: none;
-  flex: none;
-  display: flex;
-  align-items: center;
-  box-sizing: border-box;
-  width: 36px;
-  height: 22px;
-  margin: 0;
-  padding: 2px;
-  border: 1px solid var(--dsw-alias-border-l3, #d4d9df);
-  border-radius: 20px;
-  background: var(--dsw-alias-interactive-bg-hover, #e8ebef);
-  cursor: pointer;
-}
-
-.dsh-glass-optimize-row [role="switch"]::before {
-  content: "";
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 1px 2px #0003;
-}
-
-.dsh-glass-optimize-row [role="switch"]:checked {
-  justify-content: end;
-  border-color: transparent;
-  background: var(--dsw-alias-state-business-primary, #416cba);
-}
-
 [data-shortcut-modal="settings"] [data-dsh-account-title] > span:last-child {
   display: none;
 }
