@@ -2,7 +2,9 @@
 
 macOS 版 DeepSeek Harness 的三款磨砂皮肤，**晴蓝、雾白、薄荷**。玻璃背后是 macOS 合成的真实桌面和其他窗口。移动窗口时，透出的背景跟着变化，输入框和正文保持清楚。
 
-入口在左下角 **更多 → 设置 → 皮肤**。左栏的「皮肤」在「Agent 预设」下方。选中皮肤后可以拖动 **玻璃透明度**，范围 0%–85%，默认 60%。皮肤和透明度都保存在当前桌面配置中。
+入口在左下角 **设置 → 皮肤**。左栏的「皮肤」在「Agent 预设」下方。选中皮肤后可以拖动 **玻璃透明度**，范围 0%–85%，默认 60%。皮肤和透明度都保存在当前桌面配置中。
+
+「皮肤」中的 **优化主界面** 默认开启。展开左栏后，「快速操作」汇集插件、自动化任务及同一侧栏区域的其他插件入口。登录和意见反馈可在 **设置 → 账户和反馈** 中打开。关闭开关后，侧栏即时恢复 DSH 原有入口，设置可从左下角的原生菜单打开。
 
 ## 适用范围
 
@@ -17,14 +19,14 @@ macOS 版 DeepSeek Harness 的三款磨砂皮肤，**晴蓝、雾白、薄荷**�
 ```sh
 npm test
 npm pack
-dsh plugin --profile desktop add "$PWD/dsh-glass-skins-0.2.0.tgz"
+dsh plugin --profile desktop add "$PWD/dsh-glass-skins-0.3.0.tgz"
 ```
 
 如果 `dsh` 不在 PATH，可使用应用随附的 CLI。
 
 ```sh
 sh "/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh" \
-  plugin --profile desktop add "$PWD/dsh-glass-skins-0.2.0.tgz"
+  plugin --profile desktop add "$PWD/dsh-glass-skins-0.3.0.tgz"
 ```
 
 ## 接入原生 HUD 磨砂

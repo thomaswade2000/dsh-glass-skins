@@ -5,12 +5,13 @@ const namespace = 'settings.dsh-glass-skins';
 const storageKeys = {
   skin: 'dsh-glass-skins.preference',
   transparency: 'dsh-glass-skins.transparency',
+  optimize: 'dsh-glass-skins.optimize-main-ui',
 };
 const skinAttribute = 'data-dsh-glass-skin';
 const transparencyProperty = '--dsh-glass-transparency';
 const transparencyId = 'dsh-glass-transparency';
 const maximumTransparency = 85;
-const defaults = { skin: 'native', transparency: 60 };
+const defaults = { skin: 'native', transparency: 60, optimize: true };
 const choices = ['native', 'sky', 'pearl', 'mint'];
 
 const en = {
@@ -22,6 +23,13 @@ const en = {
   nativeHint: 'Choose a glass skin to adjust transparency.',
   reducedNote: 'macOS Reduce Transparency is on. The selected value is saved.',
   saveError: 'Could not save your skin preference.',
+  optimize: 'Optimize the main interface',
+  optimizeHint: 'Group sidebar actions in Quick Actions and move account and feedback into Settings.',
+  quickActions: 'Quick Actions',
+  accountFeedback: 'Account and feedback',
+  account: 'Account',
+  feedback: 'Feedback',
+  accountLoading: 'Checking account status…',
   native: 'Native',
   sky: 'Clear Blue',
   pearl: 'Pearl Mist',
@@ -37,6 +45,13 @@ const zh = {
   nativeHint: '选择一款磨砂皮肤后可调节。',
   reducedNote: 'macOS 已开启「降低透明度」，滑块数值仍会保存。',
   saveError: '无法保存皮肤偏好。',
+  optimize: '优化主界面',
+  optimizeHint: '把侧栏入口收进「快速操作」，在设置中管理账户和反馈。',
+  quickActions: '快速操作',
+  accountFeedback: '账户和反馈',
+  account: '账户',
+  feedback: '反馈',
+  accountLoading: '正在读取账户状态…',
   native: '原生',
   sky: '晴蓝',
   pearl: '雾白',
@@ -53,6 +68,7 @@ function readPreferences() {
       transparency: Number.isInteger(transparency) && transparency >= 0 && transparency <= maximumTransparency
         ? transparency
         : defaults.transparency,
+      optimize: localStorage.getItem(storageKeys.optimize) !== 'false',
     };
   } catch {
     return defaults;
@@ -97,7 +113,8 @@ function apply(ctx) {
   }
 
   function update(next) {
-    if (preferences.skin === next.skin && preferences.transparency === next.transparency) return;
+    if (preferences.skin === next.skin && preferences.transparency === next.transparency
+      && preferences.optimize === next.optimize) return;
     preferences = next;
     reflect();
     for (const listener of listeners) listener();
@@ -130,7 +147,7 @@ function apply(ctx) {
     if (monitorAppearance) reducedTransparency.addEventListener('change', reflectNativeMaterial);
 
     const onStorage = (event) => {
-      if (event.key === null || event.key === storageKeys.skin || event.key === storageKeys.transparency) {
+      if (event.key === null || Object.values(storageKeys).includes(event.key)) {
         update(readPreferences());
       }
     };
@@ -152,9 +169,12 @@ function apply(ctx) {
 
   ctx.effect(() => ctx.locale.register(namespace, { en, zh }), 'dsh-glass-skins: locale');
   const t = ctx.locale.bind(namespace);
+  const getPreferences = () => preferences;
+  const layoutAvailable = typeof ctx.slots.entriesOfSlot === 'function'
+    && installCompactLayout(ctx, { subscribe, getPreferences, t });
 
   function SkinSettings() {
-    const current = useSyncExternalStore(subscribe, () => preferences);
+    const current = useSyncExternalStore(subscribe, getPreferences);
     const [saveError, setSaveError] = useState(false);
     const native = current.skin === 'native';
     const valueText = `${current.transparency}%`;
@@ -201,6 +221,20 @@ function apply(ctx) {
       !native && h('p', {
         className: 'dsh-glass-reduced-note dsh-glass-description',
       }, t('reducedNote')),
+      layoutAvailable && h('div', { className: 'dsh-glass-optimize-row' },
+        h('label', { htmlFor: 'dsh-glass-optimize' },
+          h('span', null, t('optimize')),
+          h('span', { id: 'dsh-glass-optimize-hint', className: 'dsh-glass-description' }, t('optimizeHint')),
+        ),
+        h('input', {
+          id: 'dsh-glass-optimize',
+          type: 'checkbox',
+          role: 'switch',
+          checked: current.optimize,
+          'aria-describedby': 'dsh-glass-optimize-hint',
+          onChange: (event) => setSaveError(!save('optimize', event.currentTarget.checked)),
+        }),
+      ),
       saveError && h('p', { role: 'alert' }, t('saveError')),
     );
   }
