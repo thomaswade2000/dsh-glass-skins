@@ -100,6 +100,84 @@ function SkinSwitch({ id, label, hint, checked, onChange }) {
   );
 }
 
+function observeComposerClip(app) {
+  const readyAttribute = 'data-dsh-glass-composer-clip';
+  const insetProperty = '--dsh-glass-composer-inset';
+  let binding;
+  let frame = 0;
+  let inset;
+
+  function paintClip() {
+    if (!binding) return;
+    const { scrollport, flow, card } = binding;
+    const cardBox = card.getBoundingClientRect();
+    const flowBox = flow.getBoundingClientRect();
+    if (cardBox.height === 0 || flowBox.width === 0) {
+      scrollport.removeAttribute(readyAttribute);
+      return;
+    }
+    // Both edges are in viewport coordinates even while the input is sticky
+    // and the messages are moving through the scrollport.
+    const nextInset = `${flowBox.bottom - (cardBox.top + cardBox.height / 2)}px`;
+    if (inset !== nextInset) {
+      inset = nextInset;
+      flow.style.setProperty(insetProperty, inset);
+    }
+    scrollport.toggleAttribute(readyAttribute, true);
+  }
+
+  function scheduleClip() {
+    if (frame === 0) frame = requestAnimationFrame(() => {
+      frame = 0;
+      paintClip();
+    });
+  }
+
+  const resize = new ResizeObserver(paintClip);
+
+  function unbind() {
+    if (!binding) return;
+    const { scrollport, flow } = binding;
+    scrollport.removeEventListener('scroll', scheduleClip);
+    scrollport.removeAttribute(readyAttribute);
+    flow.style.removeProperty(insetProperty);
+    resize.disconnect();
+    if (frame !== 0) cancelAnimationFrame(frame);
+    binding = undefined;
+    inset = undefined;
+    frame = 0;
+  }
+
+  function bind() {
+    const scrollport = app.querySelector(
+      '[data-slot="main.conversation"] [data-content-phase="active"] [data-conversation-scroll]',
+    );
+    const flow = scrollport?.querySelector('[data-chat-flow]');
+    const seat = scrollport?.querySelector(':scope > [data-composer-seat]');
+    const card = seat?.querySelector('[data-composer-card]');
+    if (binding?.scrollport === scrollport && binding?.flow === flow && binding?.card === card) return;
+    unbind();
+    if (!card || !flow || flow.closest('[data-conversation-scroll]') !== scrollport) return;
+    binding = { scrollport, flow, card };
+    scrollport.addEventListener('scroll', scheduleClip, { passive: true });
+    for (const target of [scrollport, flow, seat, card]) resize.observe(target);
+    paintClip();
+  }
+
+  const replacements = new MutationObserver((changes) => {
+    if (!binding?.flow.isConnected || !binding.card.isConnected
+      || changes.some(change => change.type === 'attributes')) bind();
+  });
+  replacements.observe(app, {
+    childList: true, subtree: true, attributes: true, attributeFilter: ['data-content-phase'],
+  });
+  bind();
+  return () => {
+    replacements.disconnect();
+    unbind();
+  };
+}
+
 function apply(ctx) {
   const root = document.documentElement;
   if (root.dataset.platform !== 'darwin' || !window.dshDesktop) return;
@@ -107,7 +185,11 @@ function apply(ctx) {
   let preferences = readPreferences();
   const setHudEnabled = window.dshDesktop.glass?.setHudEnabled;
   const reducedTransparency = window.matchMedia('(prefers-reduced-transparency: reduce)');
+  const app = typeof ResizeObserver === 'function' && CSS.supports('clip-path', 'inset(0)')
+    ? document.getElementById('root')
+    : null;
   let requestedHud;
+  let stopComposerClip;
   const listeners = new Set();
   const subscribe = (listener) => {
     listeners.add(listener);
@@ -126,6 +208,18 @@ function apply(ctx) {
     });
   }
 
+  function reflectAppearance() {
+    reflectNativeMaterial();
+    if (!app) return;
+    const glass = preferences.skin !== 'native' && !document.body.hasAttribute('data-ds-dark-theme');
+    if (glass) {
+      stopComposerClip ??= observeComposerClip(app);
+    } else {
+      stopComposerClip?.();
+      stopComposerClip = undefined;
+    }
+  }
+
   function reflect() {
     root.toggleAttribute(accentAttribute, preferences.skin !== 'native' && preferences.matchAccent);
     if (preferences.skin === 'native') {
@@ -135,7 +229,7 @@ function apply(ctx) {
       root.setAttribute(skinAttribute, preferences.skin);
       root.style.setProperty(transparencyProperty, String(preferences.transparency / 100));
     }
-    reflectNativeMaterial();
+    reflectAppearance();
   }
 
   function update(next) {
@@ -163,14 +257,14 @@ function apply(ctx) {
     document.head.appendChild(style);
     reflect();
 
-    const monitorAppearance = typeof setHudEnabled === 'function'
-      ? new MutationObserver(reflectNativeMaterial)
+    const monitorAppearance = typeof setHudEnabled === 'function' || app
+      ? new MutationObserver(reflectAppearance)
       : null;
     monitorAppearance?.observe(document.body, {
       attributes: true,
       attributeFilter: ['data-ds-dark-theme'],
     });
-    if (monitorAppearance) reducedTransparency.addEventListener('change', reflectNativeMaterial);
+    if (typeof setHudEnabled === 'function') reducedTransparency.addEventListener('change', reflectNativeMaterial);
 
     const onStorage = (event) => {
       if (event.key === null || Object.values(storageKeys).includes(event.key)) {
@@ -181,8 +275,9 @@ function apply(ctx) {
 
     return () => {
       window.removeEventListener('storage', onStorage);
-      if (monitorAppearance) {
-        monitorAppearance.disconnect();
+      monitorAppearance?.disconnect();
+      stopComposerClip?.();
+      if (typeof setHudEnabled === 'function') {
         reducedTransparency.removeEventListener('change', reflectNativeMaterial);
         if (requestedHud !== false) void setHudEnabled(false).catch(() => {});
       }

@@ -91,6 +91,18 @@ html[data-platform="darwin"][data-dsh-glass-skin] body:not([data-ds-dark-theme])
   background-color: transparent;
 }
 
+/* Keep the sticky composer's native space in the scrollport. Only the chat
+   flow's lower paint edge follows the midpoint of the input card. */
+html[data-dsh-glass-skin] body:not([data-ds-dark-theme])
+  [data-dsh-glass-composer-clip]:not(:has([data-conversation-composer-overlay])) > [data-composer-seat] {
+  background: transparent;
+}
+
+html[data-dsh-glass-skin] body:not([data-ds-dark-theme])
+  [data-dsh-glass-composer-clip]:not(:has([data-conversation-composer-overlay])) [data-chat-flow] {
+  clip-path: inset(-100vmax -100vmax var(--dsh-glass-composer-inset, 0px));
+}
+
 /*
  * The visible dock panel supplies the tint. Clear the track underneath to
  * avoid compounding the alpha. Floating tools keep their independent surface.
