@@ -18,9 +18,9 @@ macOS 版 DeepSeek Harness 的三款磨砂皮肤，**晴蓝、雾白、薄荷**�
 
 ```sh
 install_dir=$(mktemp -d)
-archive="$install_dir/dsh-glass-skins-0.4.0.tgz"
+archive="$install_dir/dsh-glass-skins-0.4.1.tgz"
 curl -fL -o "$archive" \
-  "https://github.com/thomaswade2000/dsh-glass-skins/releases/download/v0.4.0/dsh-glass-skins-0.4.0.tgz" &&
+  "https://github.com/thomaswade2000/dsh-glass-skins/releases/download/v0.4.1/dsh-glass-skins-0.4.1.tgz" &&
 tar -xzf "$archive" -C "$install_dir" package/package.json package/scripts &&
 node "$install_dir/package/scripts/install-desktop.mjs" "$archive"
 ```

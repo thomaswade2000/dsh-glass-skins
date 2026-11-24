@@ -3,7 +3,7 @@ import {
 } from 'node:fs/promises';
 import { constants } from 'node:fs';
 import { randomUUID } from 'node:crypto';
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const version = '0.2.2-rc.5';
@@ -185,7 +185,7 @@ export async function manageBridge(action, appPath) {
   return action === 'install' ? 'HUD bridge installed.' : 'HUD bridge removed.';
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && await realpath(process.argv[1]).catch(() => null) === fileURLToPath(import.meta.url)) {
   try {
     if (process.platform !== 'darwin') throw new Error('The desktop bridge is for macOS.');
     console.log(await manageBridge(process.argv[2], process.argv[3]));

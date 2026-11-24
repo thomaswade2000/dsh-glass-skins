@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 import { runInNewContext } from 'node:vm';
 import { installDesktop } from '../scripts/install-desktop.mjs';
 import { manageBridge, patchDesktopSources } from '../scripts/patch-desktop.mjs';
@@ -171,7 +172,8 @@ test('the release installer installs both components and rolls back a new bridge
   const archive = join(temporary, 'release.tgz');
   await Promise.all([cliDir, profile, staging].map(path => mkdir(path, { recursive: true })));
   await writeFile(join(profile, 'package.json'), '{}');
-  await writeFile(join(staging, 'package.json'), await readFile(new URL('../package.json', import.meta.url)));
+  const manifest = await readFile(new URL('../package.json', import.meta.url), 'utf8');
+  await writeFile(join(staging, 'package.json'), manifest);
   execFileSync('/usr/bin/tar', ['-czf', archive, '-C', temporary, 'package']);
   await writeFile(join(cliDir, 'dsh'), 'printf "%s\\n" "$@" > "$DSH_HOME/args"\ntest ! -f "$DSH_HOME/reject"\n');
 
@@ -193,8 +195,20 @@ test('the release installer installs both components and rolls back a new bridge
   assert.match(await readFile(preload, 'utf8'), /setHudEnabled/);
   assert.deepEqual((await readFile(join(home, 'args'), 'utf8')).trim().split('\n'), [
     'plugin', '--profile', 'desktop', 'add',
-    join(home, 'plugin-packages', 'dsh-glass-skins-0.4.0.tgz'), '--ignore-scripts',
+    join(home, 'plugin-packages', `dsh-glass-skins-${JSON.parse(manifest).version}.tgz`), '--ignore-scripts',
   ]);
+});
+
+test('desktop commands execute when invoked through a symlinked path', async (t) => {
+  const temporary = await mkdtemp(join(tmpdir(), 'dsh-bridge-cli-'));
+  t.after(() => rm(temporary, { recursive: true, force: true }));
+  for (const file of ['install-desktop.mjs', 'patch-desktop.mjs']) {
+    const alias = join(temporary, file);
+    await symlink(fileURLToPath(new URL('../scripts/' + file, import.meta.url)), alias);
+    const result = spawnSync(process.execPath, [alias], { encoding: 'utf8' });
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /Usage:|for macOS/);
+  }
 });
 
 test('a changed desktop source or a redirected target is refused', async (t) => {

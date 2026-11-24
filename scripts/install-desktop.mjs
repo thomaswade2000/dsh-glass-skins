@@ -71,7 +71,7 @@ export async function installDesktop(archive, appPath = defaultApp) {
   return hud;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && await realpath(process.argv[1]).catch(() => null) === fileURLToPath(import.meta.url)) {
   try {
     if (process.platform !== 'darwin') throw new Error('DSH Glass Skins is for macOS.');
     console.log(await installDesktop(process.argv[2], process.argv[3]));
