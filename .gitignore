@@ -1,0 +1,11 @@
+/lib/
+/dsh-glass-skins-*.tgz
+node_modules/
+.DS_Store
+.env*
+*.log
+*.bak
+*.tmp
+*.app/
+.dsh/
+.dsh-glass-skins-hud-backup.json

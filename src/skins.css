@@ -1,0 +1,191 @@
+/* Tint values describe the glass surface. The macOS window blurs the desktop. */
+:where(.dsh-glass-option[data-swatch="native"]) {
+  --dsh-glass-left-rgb: 225 228 235;
+  --dsh-glass-chat-rgb: 255 255 255;
+  --dsh-glass-right-rgb: 247 248 250;
+}
+
+:where(html[data-dsh-glass-skin="sky"], .dsh-glass-option[data-swatch="sky"]) {
+  --dsh-glass-left-rgb: 223 242 251;
+  --dsh-glass-chat-rgb: 241 250 255;
+  --dsh-glass-right-rgb: 222 235 252;
+  --dsh-glass-left-strength: .94;
+  --dsh-glass-chat-strength: .79;
+  --dsh-glass-right-strength: 1;
+}
+
+:where(html[data-dsh-glass-skin="pearl"], .dsh-glass-option[data-swatch="pearl"]) {
+  --dsh-glass-left-rgb: 241 237 249;
+  --dsh-glass-chat-rgb: 254 251 255;
+  --dsh-glass-right-rgb: 247 243 253;
+  --dsh-glass-left-strength: .78;
+  --dsh-glass-chat-strength: .62;
+  --dsh-glass-right-strength: .74;
+}
+
+:where(html[data-dsh-glass-skin="mint"], .dsh-glass-option[data-swatch="mint"]) {
+  --dsh-glass-left-rgb: 215 241 226;
+  --dsh-glass-chat-rgb: 253 255 251;
+  --dsh-glass-right-rgb: 221 244 230;
+  --dsh-glass-left-strength: .86;
+  --dsh-glass-chat-strength: .42;
+  --dsh-glass-right-strength: .89;
+}
+
+/* Each skin retains its balance between reading and tool surfaces. */
+html[data-dsh-glass-skin] {
+  --dsh-glass-left-alpha: calc(1 - var(--dsh-glass-transparency) * var(--dsh-glass-left-strength));
+  --dsh-glass-chat-alpha: calc(1 - var(--dsh-glass-transparency) * var(--dsh-glass-chat-strength));
+  --dsh-glass-right-alpha: calc(1 - var(--dsh-glass-transparency) * var(--dsh-glass-right-strength));
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  html[data-dsh-glass-skin] {
+    --dsh-glass-left-alpha: 1;
+    --dsh-glass-chat-alpha: 1;
+    --dsh-glass-right-alpha: 1;
+  }
+}
+
+/*
+ * AppFrame owns the three grid tracks. The sidebar child slot and the
+ * right-track marker identify their positions without generated class hashes.
+ * Keep the drawer and standalone main panels on their normal host surfaces.
+ */
+html[data-platform="darwin"][data-dsh-glass-skin] body:not([data-ds-dark-theme])
+  [data-slot="root"] > :not([data-sidebar-drawer]) > :has(> [data-slot="sidebar"]) {
+  background: rgb(var(--dsh-glass-left-rgb) / var(--dsh-glass-left-alpha));
+}
+
+html[data-platform="darwin"][data-dsh-glass-skin] body:not([data-ds-dark-theme])
+  [data-slot="root"] > * > :has(+ [data-rightbar-col]):has(> :not([data-global-panel]) [data-slot="main.conversation"]) {
+  background-color: rgb(var(--dsh-glass-chat-rgb) / var(--dsh-glass-chat-alpha));
+}
+
+html[data-platform="darwin"][data-dsh-glass-skin] body:not([data-ds-dark-theme])
+  [data-slot="main.conversation"] > [data-phase] {
+  background-color: transparent;
+}
+
+/*
+ * The visible dock panel supplies the tint. Clear the track underneath to
+ * avoid compounding the alpha. Floating tools keep their independent surface.
+ */
+html[data-platform="darwin"][data-dsh-glass-skin] body:not([data-ds-dark-theme]) [data-rightbar-col] {
+  background-color: transparent;
+}
+
+html[data-platform="darwin"][data-dsh-glass-skin] body:not([data-ds-dark-theme])
+  [data-sidebar-right-panel] :is([data-dockkit-host="dock"] [data-dockkit-pane], [data-dockkit-empty]) {
+  background-color: rgb(var(--dsh-glass-right-rgb) / var(--dsh-glass-right-alpha));
+}
+
+.dsh-glass-picker {
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0 0 18px;
+  border: 0;
+}
+
+.dsh-glass-picker legend {
+  font-size: 1.2em;
+  font-weight: 600;
+  padding: 0;
+}
+
+.dsh-glass-description {
+  margin: 7px 0 17px;
+  color: var(--dsw-alias-label-secondary, #667080);
+}
+
+.dsh-glass-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 116px), 1fr));
+  gap: 10px;
+}
+
+.dsh-glass-option {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 9px 7px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--dsw-alias-border-l3, #d4d9df);
+  border-radius: 12px;
+  background: var(--dsw-alias-bg-layer-1);
+  cursor: pointer;
+}
+
+.dsh-glass-option:has(input:checked) {
+  border-color: var(--dsw-alias-state-business-primary, #416cba);
+  background: var(--dsw-alias-bg-layer-2);
+}
+
+.dsh-glass-option input {
+  margin: 0;
+  accent-color: var(--dsw-alias-state-business-primary, #416cba);
+}
+
+.dsh-glass-swatch {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  height: 42px;
+  border-radius: 7px;
+  border: 1px solid var(--dsw-alias-border-l3, #d4d9df);
+  background: linear-gradient(to right,
+    rgb(var(--dsh-glass-left-rgb)) 0 23%,
+    rgb(var(--dsh-glass-chat-rgb)) 23% 64%,
+    rgb(var(--dsh-glass-right-rgb)) 64%);
+}
+
+.dsh-glass-slider {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--dsw-alias-border-l3, #d4d9df);
+}
+
+.dsh-glass-slider-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.dsh-glass-slider-heading span {
+  color: var(--dsw-alias-label-secondary, #667080);
+  font-variant-numeric: tabular-nums;
+}
+
+.dsh-glass-slider input {
+  display: block;
+  width: 100%;
+  height: 32px;
+  margin: 4px 0 0;
+  color-scheme: light;
+  accent-color: var(--dsw-alias-state-business-primary, #416cba);
+}
+
+body[data-ds-dark-theme] .dsh-glass-slider input {
+  color-scheme: dark;
+}
+
+.dsh-glass-slider .dsh-glass-description {
+  margin: 2px 0 0;
+}
+
+.dsh-glass-dark-note,
+.dsh-glass-reduced-note {
+  display: none;
+  margin-top: 14px;
+}
+
+body[data-ds-dark-theme] .dsh-glass-dark-note {
+  display: block;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  body:not([data-ds-dark-theme]) .dsh-glass-reduced-note {
+    display: block;
+  }
+}
