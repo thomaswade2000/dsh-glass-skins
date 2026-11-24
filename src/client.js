@@ -11,7 +11,7 @@ const skinAttribute = 'data-dsh-glass-skin';
 const transparencyProperty = '--dsh-glass-transparency';
 const transparencyId = 'dsh-glass-transparency';
 const maximumTransparency = 85;
-const defaults = { skin: 'native', transparency: 60, optimize: true };
+const defaults = { skin: 'sky', transparency: 60, optimize: true };
 const choices = ['native', 'sky', 'pearl', 'mint'];
 
 const en = {

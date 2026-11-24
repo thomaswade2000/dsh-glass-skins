@@ -5,14 +5,15 @@ import { runInNewContext } from 'node:vm';
 
 const source = await readFile(new URL('../src/client.js', import.meta.url), 'utf8');
 
-test('HUD follows saved skin, light appearance, accessibility and unload', () => {
+test('a fresh profile uses HUD in light appearance and retains an explicit native preference', () => {
   let dark = false;
   let onAppearance;
   let onMediaChange;
   let disposeStyle;
+  let onStorage;
   const nativeCalls = [];
   const domAttributes = new Map();
-  const settings = new Map([['dsh-glass-skins.preference', 'sky']]);
+  const settings = new Map();
   const stylesheet = { setAttribute() {}, remove() {} };
   const root = {
     dataset: { platform: 'darwin' },
@@ -39,8 +40,8 @@ test('HUD follows saved skin, light appearance, accessibility and unload', () =>
     window: {
       dshDesktop: { glass: { setHudEnabled: async enabled => { nativeCalls.push(enabled); } } },
       matchMedia: () => media,
-      addEventListener(name, callback) { this.onStorage = callback; },
-      removeEventListener() {},
+      addEventListener(name, callback) { onStorage = callback; },
+      removeEventListener() { onStorage = undefined; },
     },
     localStorage: { getItem: key => settings.get(key) ?? null },
     MutationObserver: class {
@@ -70,10 +71,15 @@ test('HUD follows saved skin, light appearance, accessibility and unload', () =>
   onMediaChange();
   media.matches = false;
   onMediaChange();
+  settings.set('dsh-glass-skins.preference', 'native');
+  onStorage({ key: 'dsh-glass-skins.preference' });
+  assert.equal(domAttributes.get('data-dsh-glass-skin'), undefined);
+  assert.equal(nativeCalls.at(-1), false);
   disposeStyle();
 
   assert.deepEqual(nativeCalls, [true, false, true, false, true, false]);
   assert.equal(onAppearance, undefined);
   assert.equal(onMediaChange, undefined);
+  assert.equal(onStorage, undefined);
   assert.equal(domAttributes.size, 0);
 });

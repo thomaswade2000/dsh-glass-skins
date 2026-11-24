@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { runInNewContext } from 'node:vm';
+import { installDesktop } from '../scripts/install-desktop.mjs';
 import { manageBridge, patchDesktopSources } from '../scripts/patch-desktop.mjs';
 
 const vendorMain = `function createWindow(preload, show = false, primary = false) {
@@ -158,6 +160,41 @@ test('install can finish a partial update and remove restores both original file
   assert.equal(await readFile(preload, 'utf8'), vendorPreload);
   await assert.rejects(readFile(backup), { code: 'ENOENT' });
   assert.match(await manageBridge('remove', app), /already absent/);
+});
+
+test('the release installer installs both components and rolls back a new bridge if package add fails', async (t) => {
+  const { app, main, preload } = await bundleFixture(t);
+  const temporary = dirname(app);
+  const cliDir = join(app, 'Contents', 'Resources', 'runtime', 'cli', 'bin');
+  const profile = join(temporary, 'home', 'profiles', 'desktop');
+  const staging = join(temporary, 'package');
+  const archive = join(temporary, 'release.tgz');
+  await Promise.all([cliDir, profile, staging].map(path => mkdir(path, { recursive: true })));
+  await writeFile(join(profile, 'package.json'), '{}');
+  await writeFile(join(staging, 'package.json'), await readFile(new URL('../package.json', import.meta.url)));
+  execFileSync('/usr/bin/tar', ['-czf', archive, '-C', temporary, 'package']);
+  await writeFile(join(cliDir, 'dsh'), 'printf "%s\\n" "$@" > "$DSH_HOME/args"\ntest ! -f "$DSH_HOME/reject"\n');
+
+  const home = join(temporary, 'home');
+  const previous = process.env.DSH_HOME;
+  process.env.DSH_HOME = home;
+  t.after(() => {
+    if (previous === undefined) delete process.env.DSH_HOME;
+    else process.env.DSH_HOME = previous;
+  });
+
+  await writeFile(join(home, 'reject'), '');
+  await assert.rejects(installDesktop(archive, app), /plugin installation failed/);
+  assert.equal(await readFile(main, 'utf8'), vendorMain);
+  assert.equal(await readFile(preload, 'utf8'), vendorPreload);
+  await rm(join(home, 'reject'));
+
+  assert.equal(await installDesktop(archive, app), 'HUD bridge installed.');
+  assert.match(await readFile(preload, 'utf8'), /setHudEnabled/);
+  assert.deepEqual((await readFile(join(home, 'args'), 'utf8')).trim().split('\n'), [
+    'plugin', '--profile', 'desktop', 'add',
+    join(home, 'plugin-packages', 'dsh-glass-skins-0.4.0.tgz'), '--ignore-scripts',
+  ]);
 });
 
 test('a changed desktop source or a redirected target is refused', async (t) => {

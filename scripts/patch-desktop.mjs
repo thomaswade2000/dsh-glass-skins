@@ -146,7 +146,11 @@ export async function manageBridge(action, appPath) {
   }
 
   const installed = current.every((entry, index) => entry.text === after[index]);
-  if (action === 'check') return installed ? 'HUD bridge installed.' : 'Desktop layout is compatible.';
+  if (action === 'check') {
+    if (installed) return 'HUD bridge installed.';
+    if (saved) return 'HUD bridge backup found. Installation can be resumed.';
+    return 'Desktop layout is compatible.';
+  }
   if (action === 'remove' && !saved) return 'HUD bridge was already absent.';
 
   if (action === 'install' && !saved) {

@@ -1,6 +1,6 @@
 {
   "name": "dsh-glass-skins",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Three native macOS frosted-glass skins for DeepSeek Harness",
   "type": "module",
   "exports": {
@@ -11,6 +11,7 @@
   "files": [
     "index.js",
     "lib/client.js",
+    "scripts/install-desktop.mjs",
     "scripts/patch-desktop.mjs",
     "cordis.patch.yml",
     "README.md"

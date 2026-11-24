@@ -9,48 +9,35 @@ macOS 版 DeepSeek Harness 的三款磨砂皮肤，**晴蓝、雾白、薄荷**�
 ## 适用范围
 
 - macOS 版 DSH `0.2.2-rc.5`。
-- 三款皮肤在浅色外观下生效。选「原生」或切到深色时，窗口恢复 DSH 默认材质。开启 macOS「降低透明度」时，皮肤使用实色底。
-- 更清透的 HUD 材质需要下方的桌面端桥接。只安装皮肤包时，使用 DSH 自带的 Sidebar 磨砂。
+- GitHub 安装流程同时安装皮肤插件和 macOS 原生 HUD 桥接。没有已保存的皮肤偏好时，浅色外观默认使用「晴蓝」和 HUD 磨砂。
+- 三款皮肤在浅色外观下生效。选「原生」或切到深色时，窗口恢复 DSH 默认材质。开启 macOS「降低透明度」时，皮肤使用实色底。升级保留已有的皮肤和透明度偏好。
 
-## 构建和安装
+## 从 GitHub 安装
 
-在仓库目录运行以下命令。
+先打开过一次主 DSH，以初始化桌面配置，然后退出使用同一个 App 的所有 DSH 实例。在 macOS 终端运行以下命令，需要 Node.js。
 
 ```sh
-npm test
-npm pack
-dsh plugin --profile desktop add "$PWD/dsh-glass-skins-0.3.0.tgz"
+install_dir=$(mktemp -d)
+archive="$install_dir/dsh-glass-skins-0.4.0.tgz"
+curl -fL -o "$archive" \
+  "https://github.com/thomaswade2000/dsh-glass-skins/releases/download/v0.4.0/dsh-glass-skins-0.4.0.tgz" &&
+tar -xzf "$archive" -C "$install_dir" package/package.json package/scripts &&
+node "$install_dir/package/scripts/install-desktop.mjs" "$archive"
 ```
 
-如果 `dsh` 不在 PATH，可使用应用随附的 CLI。
+安装器通过 DSH 随附的 CLI 安装到桌面配置，并在修改 App 前备份两个原始桌面文件。重新打开 DSH 即可使用。安装器默认使用 `/Applications/DeepSeek Harness.app`，也可以在安装包路径后传入实际的 App 路径。桥接支持已解包的应用布局，DSH 更新后需重新确认兼容性。
+
+## 卸载
+
+先退出 DSH，再使用安装包中的脚本恢复原始 App 文件，并从桌面配置移除皮肤插件。以下命令沿用安装时的 `install_dir`。
 
 ```sh
+node "$install_dir/package/scripts/patch-desktop.mjs" remove "/Applications/DeepSeek Harness.app" &&
 sh "/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh" \
-  plugin --profile desktop add "$PWD/dsh-glass-skins-0.3.0.tgz"
+  plugin --profile desktop remove dsh-glass-skins
 ```
 
-## 接入原生 HUD 磨砂
-
-桥接用于 **已解包且通过兼容性检查** 的 DSH `0.2.2-rc.5`。先退出 DSH，再用实际的应用路径执行检查。支持的宿主会显示 `Desktop layout is compatible.`。
-
-```sh
-node scripts/patch-desktop.mjs check "/Applications/DeepSeek Harness.app"
-node scripts/patch-desktop.mjs install "/Applications/DeepSeek Harness.app"
-```
-
-重新打开 DSH 并选中一款皮肤即可使用。安装脚本在本机备份原始桌面文件，兼容既有皮肤偏好。宿主更新后请重新检查。若多个桌面配置共用同一个应用包，桥接随应用包提供，各配置需要各自启用皮肤。
-
-要撤回桥接，退出 DSH 后运行以下命令。
-
-```sh
-node scripts/patch-desktop.mjs remove "/Applications/DeepSeek Harness.app"
-```
-
-皮肤包可以独立卸载。
-
-```sh
-dsh plugin --profile desktop remove dsh-glass-skins
-```
+在仓库里开发时，运行 `npm test` 验证，运行 `npm pack` 生成包含安装器的发布包。
 
 ## 隐私
 
