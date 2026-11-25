@@ -6,9 +6,21 @@ macOS 版 DeepSeek Harness 的三款磨砂皮肤，**晴蓝、雾白、薄荷**�
 
 **强调色跟随皮肤** 默认开启。在浅色外观下，发送按钮、用户消息气泡、选中标签和链接等控件会随磨砂皮肤切换色系。关闭开关、选择「原生」或切到深色外观时，界面使用 DSH 原生配色。
 
-浅色磨砂皮肤下，玻璃背景延伸到输入框两侧和用量栏。滚动中的消息在输入框中线裁切，滚到底时最后一条消息完整显示在输入框上方。
+浅色磨砂皮肤下，玻璃背景延伸到输入区两侧和用量栏，也覆盖审批、追问等卡片出现时的底部区域。消息的绘制边界随输入框或卡片的中线移动，滚到底时最后一条消息完整显示在输入区上方。
 
 「皮肤」中的 **优化主界面** 默认开启。展开左栏后，「快速操作」汇集插件、自动化任务及同一侧栏区域的其他插件入口。登录和意见反馈可在 **设置 → 账户和反馈** 中打开。关闭开关后，侧栏即时恢复 DSH 原有入口，设置可从左下角的原生菜单打开。
+
+## 界面预览
+
+截图来自隔离 DSH 的演示会话，窗外的色彩来自窗口后方的背景。
+
+**晴蓝 · 三栏工作区**
+
+![晴蓝皮肤下的左侧栏、对话和右侧工具栏，蓝青背景透过窗口](docs/screenshots/clear-blue.png)
+
+| 雾白 · 对话与输入区 | 薄荷 · 皮肤设置 |
+| --- | --- |
+| ![雾白皮肤透出粉紫背景，输入框两侧延续磨砂](docs/screenshots/pearl-mist.png) | ![薄荷皮肤的透明度滑块和强调色开关，设置窗口后方透出薄荷色背景](docs/screenshots/mint-settings.png) |
 
 ## 适用范围
 
@@ -22,9 +34,9 @@ macOS 版 DeepSeek Harness 的三款磨砂皮肤，**晴蓝、雾白、薄荷**�
 
 ```sh
 install_dir=$(mktemp -d)
-archive="$install_dir/dsh-glass-skins-0.5.1.tgz"
+archive="$install_dir/dsh-glass-skins-0.5.2.tgz"
 curl -fL -o "$archive" \
-  "https://github.com/thomaswade2000/dsh-glass-skins/releases/download/v0.5.1/dsh-glass-skins-0.5.1.tgz" &&
+  "https://github.com/thomaswade2000/dsh-glass-skins/releases/download/v0.5.2/dsh-glass-skins-0.5.2.tgz" &&
 tar -xzf "$archive" -C "$install_dir" package/package.json package/scripts &&
 node "$install_dir/package/scripts/install-desktop.mjs" "$archive"
 ```

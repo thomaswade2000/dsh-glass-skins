@@ -102,79 +102,103 @@ function SkinSwitch({ id, label, hint, checked, onChange }) {
 
 function observeComposerClip(app) {
   const readyAttribute = 'data-dsh-glass-composer-clip';
+  const targetAttribute = 'data-dsh-glass-clip-target';
   const insetProperty = '--dsh-glass-composer-inset';
-  let binding;
+  const scrollSelector = '[data-conversation-scroll]';
+  const overlaySelector = '[data-conversation-composer-overlay]';
+  const flowSelector = '[data-chat-flow]:not([data-step-process-content])';
+  const cardSelector = '[data-composer-card], [data-approval-key], [data-question-key]';
+  const structure = `[data-conversation-content], ${scrollSelector}, [data-composer-seat], ${overlaySelector}, ${flowSelector}, ${cardSelector}`;
+  const bindings = new Map();
   let frame = 0;
-  let inset;
+  let needsBinding = false;
 
   function paintClip() {
-    if (!binding) return;
-    const { scrollport, flow, card } = binding;
-    const cardBox = card.getBoundingClientRect();
-    const flowBox = flow.getBoundingClientRect();
-    if (cardBox.height === 0 || flowBox.width === 0) {
-      scrollport.removeAttribute(readyAttribute);
-      return;
+    for (const binding of bindings.values()) {
+      const { scrollport, surface, seat, cards } = binding;
+      const cardBox = cards.map(card => card.getBoundingClientRect()).find(box => box.height > 0)
+        ?? seat.getBoundingClientRect();
+      const surfaceBox = surface.getBoundingClientRect();
+      const ready = cardBox.height > 0 && surfaceBox.width > 0;
+      scrollport.toggleAttribute(readyAttribute, ready);
+      if (!ready) continue;
+      // Viewport coordinates account for sticky chat composers and absolute
+      // composers above a view that owns its own scrollers.
+      const inset = `${surfaceBox.bottom - (cardBox.top + cardBox.height / 2)}px`;
+      if (binding.inset !== inset) {
+        binding.inset = inset;
+        surface.style.setProperty(insetProperty, inset);
+      }
     }
-    // Both edges are in viewport coordinates even while the input is sticky
-    // and the messages are moving through the scrollport.
-    const nextInset = `${flowBox.bottom - (cardBox.top + cardBox.height / 2)}px`;
-    if (inset !== nextInset) {
-      inset = nextInset;
-      flow.style.setProperty(insetProperty, inset);
-    }
-    scrollport.toggleAttribute(readyAttribute, true);
   }
 
   function scheduleClip() {
     if (frame === 0) frame = requestAnimationFrame(() => {
       frame = 0;
+      if (needsBinding) {
+        needsBinding = false;
+        bind();
+      }
       paintClip();
     });
   }
 
   const resize = new ResizeObserver(paintClip);
 
-  function unbind() {
-    if (!binding) return;
-    const { scrollport, flow } = binding;
+  function unbind({ scrollport, surface, seat, cards }) {
     scrollport.removeEventListener('scroll', scheduleClip);
     scrollport.removeAttribute(readyAttribute);
-    flow.style.removeProperty(insetProperty);
-    resize.disconnect();
-    if (frame !== 0) cancelAnimationFrame(frame);
-    binding = undefined;
-    inset = undefined;
-    frame = 0;
+    surface.removeAttribute(targetAttribute);
+    surface.style.removeProperty(insetProperty);
+    for (const target of [scrollport, surface, seat, ...cards]) resize.unobserve(target);
+    bindings.delete(scrollport);
   }
 
   function bind() {
-    const scrollport = app.querySelector(
-      '[data-slot="main.conversation"] [data-content-phase="active"] [data-conversation-scroll]',
-    );
-    const flow = scrollport?.querySelector('[data-chat-flow]');
-    const seat = scrollport?.querySelector(':scope > [data-composer-seat]');
-    const card = seat?.querySelector('[data-composer-card]');
-    if (binding?.scrollport === scrollport && binding?.flow === flow && binding?.card === card) return;
-    unbind();
-    if (!card || !flow || flow.closest('[data-conversation-scroll]') !== scrollport) return;
-    binding = { scrollport, flow, card };
-    scrollport.addEventListener('scroll', scheduleClip, { passive: true });
-    for (const target of [scrollport, flow, seat, card]) resize.observe(target);
-    paintClip();
+    const active = new Set(app.querySelectorAll(
+      `:is([data-slot="main.conversation"], [data-sidebar-chat])
+        [data-conversation-content][data-content-phase="active"] ${scrollSelector}`,
+    ));
+    for (const binding of bindings.values()) {
+      if (!active.has(binding.scrollport)) unbind(binding);
+    }
+    for (const scrollport of active) {
+      const seat = scrollport.querySelector(':scope > [data-composer-seat]');
+      const surface = [...scrollport.querySelectorAll(`${overlaySelector}, ${flowSelector}`)]
+        .find(element => element.closest(scrollSelector) === scrollport && !seat?.contains(element));
+      const cards = [...(seat?.querySelectorAll(cardSelector) ?? [])];
+      const previous = bindings.get(scrollport);
+      if (previous?.seat === seat && previous?.surface === surface
+        && cards.length === previous.cards.length
+        && cards.every((card, index) => card === previous.cards[index])) continue;
+      if (previous) unbind(previous);
+      if (!seat || !surface) continue;
+      bindings.set(scrollport, { scrollport, surface, seat, cards });
+      // Mark the measured element itself. Work-step groups also use
+      // data-chat-flow and must never inherit a second clipping boundary.
+      surface.setAttribute(targetAttribute, '');
+      scrollport.addEventListener('scroll', scheduleClip, { passive: true });
+      for (const target of [scrollport, surface, seat, ...cards]) resize.observe(target);
+    }
   }
 
   const replacements = new MutationObserver((changes) => {
-    if (!binding?.flow.isConnected || !binding.card.isConnected
-      || changes.some(change => change.type === 'attributes')) bind();
+    if (!changes.some(change => change.type === 'attributes'
+      || [...change.addedNodes, ...change.removedNodes].some(node => node.nodeType === 1
+        && (node.matches(structure) || node.querySelector(structure))))) return;
+    needsBinding = true;
+    scheduleClip();
   });
   replacements.observe(app, {
     childList: true, subtree: true, attributes: true, attributeFilter: ['data-content-phase'],
   });
   bind();
+  paintClip();
   return () => {
     replacements.disconnect();
-    unbind();
+    if (frame !== 0) cancelAnimationFrame(frame);
+    for (const binding of bindings.values()) unbind(binding);
+    resize.disconnect();
   };
 }
 
